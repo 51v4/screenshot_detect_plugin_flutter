@@ -35,10 +35,11 @@ class ScreenshotDetectionManager(
             if (permissionsController.hasRequiredPermissions(getPermissionNeedRequest())) {
                 if (activity != null) {
                     val path = getFilePathFromContentResolver(activity!!.baseContext, uri)
+                    if (isScreenshotPath(path)) {
+                        onScreenCaptured(path)
+                    }
                 }
-                if (isScreenshotPath(path)) {
-                    onScreenCaptured(path)
-                }
+
             } else {
                 onScreenCapturedWithDeniedPermission()
             }
