@@ -18,7 +18,10 @@ interface ScreenshotDetectionListener {
     fun onScreenCapturedWithDeniedPermission()
 }
 
-class ScreenshotDetectionManager(private val listener: ScreenshotDetectionListener?, private val permissionsController: PermissionsController) : PluginRegistry.RequestPermissionsResultListener,
+class ScreenshotDetectionManager(
+    private val listener: ScreenshotDetectionListener?,
+    private val permissionsController: PermissionsController
+) : PluginRegistry.RequestPermissionsResultListener,
     ScreenshotDetectionListener {
     private val TAG: String = "ScreenshotDetectPluginFlutterPlugin-ScreenshotDetectionManager"
     private val REQUEST_CODE_READ_EXTERNAL_STORAGE_PERMISSION = 1993
@@ -30,7 +33,9 @@ class ScreenshotDetectionManager(private val listener: ScreenshotDetectionListen
             super.onChange(selfChange, uri)
 
             if (permissionsController.hasRequiredPermissions(getPermissionNeedRequest())) {
-                val path = getFilePathFromContentResolver(activity!!.baseContext, uri)
+                if (activity != null) {
+                    val path = getFilePathFromContentResolver(activity!!.baseContext, uri)
+                }
                 if (isScreenshotPath(path)) {
                     onScreenCaptured(path)
                 }
@@ -60,7 +65,13 @@ class ScreenshotDetectionManager(private val listener: ScreenshotDetectionListen
     }
 
     fun requestReadExternalStoragePerPermission() {
-        permissionsController.requestPermissions(activity!!, getPermissionNeedRequest(), REQUEST_CODE_READ_EXTERNAL_STORAGE_PERMISSION)
+        if (activity != null) {
+            permissionsController.requestPermissions(
+                activity!!,
+                getPermissionNeedRequest(),
+                REQUEST_CODE_READ_EXTERNAL_STORAGE_PERMISSION
+            )
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -86,23 +97,28 @@ class ScreenshotDetectionManager(private val listener: ScreenshotDetectionListen
     }
 
     fun startScreenshotDetection() {
-        Log.d(TAG, "startScreenshotDetection")
-        activity!!.baseContext
-            .contentResolver
-            ?.registerContentObserver(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                true,
-                contentObserver
-            )
+        Log.d(TAG, "tryToStartScreenshotDetection")
+        if (activity != null) {
+            activity!!.baseContext
+                .contentResolver
+                ?.registerContentObserver(
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    true,
+                    contentObserver
+                )
+        }
     }
 
     fun stopScreenshotDetection() {
-        Log.d(TAG, "stopScreenshotDetection")
-        activity!!.baseContext.contentResolver?.unregisterContentObserver(contentObserver)
+        Log.d(TAG, "tryToStopScreenshotDetection")
+        if (activity != null) {
+            activity!!.baseContext.contentResolver?.unregisterContentObserver(contentObserver)
+        }
     }
 
     private fun isScreenshotPath(path: String?): Boolean {
-        return path != null && (path.lowercase(Locale.getDefault()).contains("screenshots") && !path.lowercase(Locale.getDefault()).contains(".pending"))
+        return path != null && (path.lowercase(Locale.getDefault())
+            .contains("screenshots") && !path.lowercase(Locale.getDefault()).contains(".pending"))
     }
 
     private fun getFilePathFromContentResolver(context: Context, uri: Uri?): String? {
